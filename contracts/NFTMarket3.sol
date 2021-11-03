@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 import "hardhat/console.sol";
 
-contract NFTMarket is ReentrancyGuardUpgradeable {
+contract NFTMarket3 is ReentrancyGuardUpgradeable {
     using Counters for Counters.Counter;
     Counters.Counter private _itemIds;
     Counters.Counter private _itemsSold;
@@ -51,10 +51,19 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
         uint256 tokenId,
         uint256 price
     ) public payable nonReentrant {
-        require(price > 0, "Price must be at least 1 wei");
+        require(
+            price > 0,
+            appendUintToString("Price must be at least 1 wei: ", price)
+        );
         require(
             msg.value == listingPrice,
-            "Price must be equal to listing price"
+            appendUintToString(
+                appendUintToString(
+                    "Price must be equal to listing price: ",
+                    msg.value
+                ),
+                listingPrice
+            )
         );
 
         _itemIds.increment();
@@ -83,6 +92,15 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
         );
     }
 
+    event MarketItemSold(
+        uint256 indexed itemId,
+        address indexed nftContract,
+        uint256 indexed tokenId,
+        address seller,
+        address owner,
+        uint256 price
+    );
+
     function createMarketSale(address nftContract, uint256 itemId)
         public
         payable
@@ -92,7 +110,13 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
         uint256 tokenId = idToMarketItem[itemId].tokenId;
         require(
             msg.value == price,
-            "Please submit the asking price in order to complete the purchase"
+            appendUintToString(
+                appendUintToString(
+                    "Please submit the asking price in order to complete the purchase: ",
+                    msg.value
+                ),
+                price
+            )
         );
 
         idToMarketItem[itemId].seller.transfer(msg.value);
@@ -102,6 +126,15 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
         _itemsSold.increment();
 
         payable(owner).transfer(listingPrice);
+
+        emit MarketItemSold(
+            itemId,
+            nftContract,
+            tokenId,
+            idToMarketItem[itemId].seller,
+            idToMarketItem[itemId].owner,
+            price
+        );
     }
 
     function fetchMarketItems() public view returns (MarketItem[] memory) {
@@ -168,5 +201,31 @@ contract NFTMarket is ReentrancyGuardUpgradeable {
         }
 
         return items;
+    }
+
+    function appendUintToString(string memory inStr, uint256 val)
+        public
+        pure
+        returns (string memory str)
+    {
+        uint256 maxlength = 100;
+        bytes memory reversed = new bytes(maxlength);
+        uint256 i = 0;
+        while (val != 0) {
+            uint256 remainder = val % 10;
+            val = val / 10;
+            reversed[i++] = bytes1(uint8(48 + remainder));
+        }
+        reversed[i++] = bytes1(" ");
+        bytes memory inStrb = bytes(inStr);
+        bytes memory s = new bytes(inStrb.length + i);
+        uint256 j;
+        for (j = 0; j < inStrb.length; j++) {
+            s[j] = inStrb[j];
+        }
+        for (j = 0; j < i; j++) {
+            s[j + inStrb.length] = reversed[i - 1 - j];
+        }
+        str = string(s);
     }
 }

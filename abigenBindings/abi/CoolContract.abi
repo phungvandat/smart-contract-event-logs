@@ -1,0 +1,1 @@
+[{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"addr","type":"address"}],"name":"Deposited","type":"event"},{"inputs":[],"name":"Deposit","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"seeBalance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}]
